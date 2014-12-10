@@ -11,24 +11,181 @@ namespace BIMChecker
     class XMLSerialize
     {
         ExcelDeserialize excelDeserialize = new ExcelDeserialize();
-        private void SerializeDataSet(DataTable t,string filename)
+        private void SerializeDataTable(DataTable dt, string filename) 
         {
-            XmlSerializer ser = new XmlSerializer(typeof(DataSet));
-
-            // Creates a DataSet; adds a table, column, and ten rows.
-            DataSet ds = new DataSet("myDataSet");
-            ds.Tables.Add(t);
-            DataRow r;
-            for (int i = 0; i < 10; i++)
-            {
-                r = t.NewRow();
-                r[0] = "Thing " + i;
-                t.Rows.Add(r);
-            }
+            XmlSerializer serializer = new XmlSerializer(typeof(Rules));
             TextWriter writer = new StreamWriter(filename);
-            ser.Serialize(writer, ds);
+            List<FirstLevel> firstLevelList = new List<FirstLevel>();
+            for (int i = dt.Rows.Count-1; i > 0; i--)
+            {
+                FirstLevel firstLevel;
+                SecondLevel secondLevel;
+                ThirdLevel thirdLevel;
+                FourthLevel fourthLevel;
+                FifthLevel fifthLevel;
+                
+                List<SecondLevel> secondLevelList = new List<SecondLevel>();
+                List<ThirdLevel> thirdLevelList = new List<ThirdLevel>();
+                List<FourthLevel> fourthLevelList = new List<FourthLevel>();
+                List<FifthLevel> fifthLevelList = new List<FifthLevel>();
+                for (int j = dt.Columns.Count; j >0 ; j--)
+                {
+                     if (j == 5 && !String.IsNullOrEmpty(dt.Rows[i][j].ToString()))
+                    {
+                        fifthLevel = new FifthLevel();
+                        fifthLevel.number = dt.Rows[i][0].ToString();
+                        fifthLevel.title = dt.Rows[i][j].ToString();
+                        fifthLevelList.Add(fifthLevel);
+                    }
+					   if (j == 4 && !String.IsNullOrEmpty(dt.Rows[i][j].ToString()))
+                    {
+                        fourthLevel = new FourthLevel();
+                        fourthLevel.number = dt.Rows[i][0].ToString(); ;
+                        fourthLevel.title = dt.Rows[i][j].ToString();
+                        fourthLevel.fifthLevel=assignSubClassification(fifthLevelList);
+                        fourthLevelList.Add(fourthLevel);
+                    }
+					   if (j == 3 && !String.IsNullOrEmpty(dt.Rows[i][j].ToString()))
+                    {
+                        thirdLevel = new ThirdLevel();
+                        thirdLevel.number = dt.Rows[i][0].ToString(); ;
+                        thirdLevel.title = dt.Rows[i][j].ToString();
+                        thirdLevel.fourthLevel = assignSubClassification(fourthLevelList);
+                        thirdLevelList.Add(thirdLevel);
+                    }
+					if (j == 2 && !String.IsNullOrEmpty(dt.Rows[i][j].ToString())) 
+                    {
+                        secondLevel = new SecondLevel();
+                        secondLevel.number = dt.Rows[i][0].ToString(); ;
+                        secondLevel.title = dt.Rows[i][j].ToString();
+                        secondLevel.thirdLevel = assignSubClassification(thirdLevelList);
+                        secondLevelList.Add(secondLevel);
+                    }
+					 if (j == 1 && !String.IsNullOrEmpty(dt.Rows[i][j].ToString()))
+                    {
+                        firstLevel = new FirstLevel();
+                        
+                        firstLevel.number = dt.Rows[i][0].ToString();
+                        firstLevel.title = dt.Rows[i][j].ToString();
+                        firstLevel.secondLevel = assignSubClassification(secondLevelList);
+                        firstLevelList.Add(firstLevel);
+                        secondLevelList.Clear();
+                        thirdLevelList.Clear();
+                        fourthLevelList.Clear();
+                        fifthLevelList.Clear();
+                    }
+
+                }
+            }
+
+
+            Classification classification = new Classification();
+          
+            classification.firstLevel = assignSubClassification(firstLevelList);
+
+            Descriptor description1 = new Descriptor();
+            description1.Variable = "number";
+            description1.Title = "OmniClass Number";
+            Descriptor description2 = new Descriptor();
+            description2.Variable = "number";
+            description2.Title = "OmniClass Number";
+
+            Data data = new Data();
+            Descriptor[] descriptions = { description1, description2 };
+            data.Descriptors = descriptions;
+            data.classification = classification;
+
+            ApplicatonTo applicationTo = new ApplicatonTo();
+            string[] className = { "IfcBuilding", "IfcSite", "IfcBuildingStorey" };
+            applicationTo.className = className;
+
+            Rule rule = new Rule();
+            rule.name = "Table 11 - Construction Entities by Function";
+            rule.description = @"Assigns a functional classification to IFC Building, IFC Site and ArchiCAD Stories based on this OmniClass (edition 2012) specification.
+
+For example: use this rule to comply with
+- 'Concept Design BIM 2010' MVD (GSA), which requires such classification for IfcBuilding and IfcBuildingStorey entities.
+- 'FM Handover' MVD (COBie), which requires such classification for IfcBuilding entity.
+
+'Apply' creates a Classification Reference for selected IFC entity, using OmniClass-required attributes derived from the item that you choose in the following list.";
+            rule.applicationTo = applicationTo;
+            rule.data = data;
+
+            Rules rules = new Rules();
+            rules.name = "OmniClass";
+            rules.rule = rule;
+            serializer.Serialize(writer, rules);
             writer.Close();
+
         }
+        private FifthLevel[] assignSubClassification(List<FifthLevel> fifthLevelList)
+        {
+            fifthLevelList.Reverse();
+            FifthLevel[] fifthLevel = new FifthLevel[fifthLevelList.Count];
+            for (int i = 0; i < fifthLevelList.Count; i++) 
+            {
+                fifthLevel[i] = fifthLevelList[i];
+            }
+            return fifthLevel;
+        }
+        private FourthLevel[] assignSubClassification(List<FourthLevel> fourthLevelList)
+        {
+            fourthLevelList.Reverse();
+            FourthLevel[] fourthLevel = new FourthLevel[fourthLevelList.Count];
+            for (int i = 0; i < fourthLevelList.Count; i++)
+            {
+                fourthLevel[i] = fourthLevelList[i];
+            }
+            return fourthLevel;
+        }
+        private ThirdLevel[] assignSubClassification(List<ThirdLevel> thirdLevelList)
+        {
+            thirdLevelList.Reverse();
+            ThirdLevel[] thirdLevel = new ThirdLevel[thirdLevelList.Count];
+            for (int i = 0; i < thirdLevelList.Count; i++)
+            {
+                thirdLevel[i] = thirdLevelList[i];
+            }
+            return thirdLevel;
+        }
+        private SecondLevel[] assignSubClassification(List<SecondLevel> secondLevelList)
+        {
+            secondLevelList.Reverse();
+            SecondLevel[] secondLevel = new SecondLevel[secondLevelList.Count];
+            for (int i = 0; i < secondLevelList.Count; i++)
+            {
+                secondLevel[i] = secondLevelList[i];
+            }
+            return secondLevel;
+        }
+        private FirstLevel[] assignSubClassification(List<FirstLevel> firstLevelList)
+        {
+            firstLevelList.Reverse();
+            FirstLevel[] firstLevel = new FirstLevel[firstLevelList.Count];
+            for (int i = 0; i < firstLevelList.Count; i++)
+            {
+                firstLevel[i] = firstLevelList[i];
+            }
+            return firstLevel;
+        }
+        //private void SerializeDataSet(DataTable t,string filename)
+        //{
+        //    XmlSerializer ser = new XmlSerializer(typeof(DataSet));
+
+        //    // Creates a DataSet; adds a table, column, and ten rows.
+        //    DataSet ds = new DataSet("myDataSet");
+        //    ds.Tables.Add(t);
+        //    DataRow r;
+        //    for (int i = 0; i < 10; i++)
+        //    {
+        //        r = t.NewRow();
+        //        r[0] = "Thing " + i;
+        //        t.Rows.Add(r);
+        //    }
+        //    TextWriter writer = new StreamWriter(filename);
+        //    ser.Serialize(writer, ds);
+        //    writer.Close();
+        //}
         static void Main(string[] args)
         {
             //Program program = new Program();
@@ -101,7 +258,7 @@ namespace BIMChecker
 
             Classification classification1 = new Classification();
             ClassificationNumber[] classificationNumber = { classificationNumber1, classificationNumber2 };
-            classification1.classificationNumber = classificationNumber;
+            classification1.firstLevel = firstLevel;
 
             Descriptor description1 = new Descriptor();
             description1.Variable = "number";
@@ -111,12 +268,12 @@ namespace BIMChecker
             description2.Title = "OmniClass Number";
 
             Data data = new Data();
-            Descriptor[] descriptions={description1,description2};
+            Descriptor[] descriptions = { description1, description2 };
             data.Descriptors = descriptions;
             data.classification = classification1;
 
             ApplicatonTo applicationTo = new ApplicatonTo();
-            string[] className={"IfcBuilding","IfcSite","IfcBuildingStorey"};
+            string[] className = { "IfcBuilding", "IfcSite", "IfcBuildingStorey" };
             applicationTo.className = className;
 
             Rule rule = new Rule();
@@ -137,7 +294,6 @@ For example: use this rule to comply with
 
             serializer.Serialize(writer, rules);
             writer.Close();
-
         }
     }
 }

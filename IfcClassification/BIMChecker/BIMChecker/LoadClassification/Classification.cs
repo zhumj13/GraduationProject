@@ -13,7 +13,7 @@ namespace BIMChecker
         [XmlElement(ElementName = "Rule")]
         public Rule rule;
     }
-    public class Rule 
+    public class Rule
     {
         [XmlElement(ElementName = "Name")]
         public string name;
@@ -24,18 +24,19 @@ namespace BIMChecker
         [XmlElement(ElementName = "Data")]
         public Data data;
     }
-    public class ApplicatonTo 
+    public class ApplicatonTo
     {
         [XmlElement(ElementName = "ClassName")]
         public string[] className;
     }
-    public class Data 
+    public class Data
     {
         [XmlArray("Descriptors")]
         public Descriptor[] Descriptors;
+        [XmlElement(ElementName = "DataEntries")]
         public Classification classification;
     }
-    public class Descriptor 
+    public class Descriptor
     {
         [XmlAttribute(AttributeName = "Variable")]
         public string Variable;
@@ -45,11 +46,13 @@ namespace BIMChecker
     [XmlRoot("DataEntries")]
     public class Classification
     {
+        //[XmlElement(ElementName = "DataEntry")]
+        //public ClassificationNumber[] classificationNumber;
         [XmlElement(ElementName = "DataEntry")]
-        public ClassificationNumber[] classificationNumber;
-        [XmlAttribute(AttributeName="number")]
+        public FirstLevel[] firstLevel;
+        [XmlAttribute(AttributeName = "number")]
         public string number;
-        [XmlAttribute(AttributeName="title")]
+        [XmlAttribute(AttributeName = "title")]
         public string title;
     }
     public class ClassificationNumber
@@ -104,9 +107,9 @@ namespace BIMChecker
     }
     public class FifthLevel
     {
-        [XmlAttribute(AttributeName="number")]
+        [XmlAttribute(AttributeName = "number")]
         public string number;
-        [XmlAttribute(AttributeName="title")]
+        [XmlAttribute(AttributeName = "title")]
         public string title;
     }
 }
